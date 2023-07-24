@@ -7,10 +7,34 @@ from firebase_admin import firestore
 import streamlit as st
 import chat_prompts
 from streamlit_image_select import image_select
+import time
 
 # Define the title and description of the app
 st.title('Pluto')
 st.write('Recreating the gen ai app')
+
+#sidebar to have instructions on how to use the app, have a tab
+with st.sidebar:
+    tab1, tab2, tab3 = st.tabs(["Instructions", "Contact Us", "Meet the Dev"])
+
+    with tab1:
+        st.header("How to use this app")
+        st.write("This section is under maintainence :construction:. Come back shortly")
+
+        with st.echo():
+            st.write("This code will be printed to the sidebar.")
+
+        # with st.spinner("Loading..."):
+        #     time.sleep(5)
+        # st.success("Done!")
+
+    with tab2:
+        st.header("Get in touch with the developers to report any bugs")
+        st.write("This section is under maintainence. Come back shortly")
+
+    with tab3:
+        st.header("Meet the Dev")
+        st.write("This section is under maintainence. Come back shortly")
 
 # Intro prompt to the language model
 intro_prompt = '''
@@ -97,29 +121,38 @@ def get_images(input_text):
         image_3 = future3.result()
     
     # #image bit
-    # col1, col2, col3, col4, col5, col6, col7, col8, col9 = st.columns(9)
-
+    # col1, col2, col3 = st.columns(3)
+    
     # with col1:
     #    st.image(image_1["data"][0]["url"])
-    #    st.image(image_1["data"][1]["url"])
-    #    st.image(image_1["data"][2]["url"])
-
     # with col2:
     #    st.image(image_2["data"][0]["url"])
-    #    st.image(image_2["data"][1]["url"])
-    #    st.image(image_2["data"][2]["url"])
-
     # with col3:
     #    st.image(image_3["data"][0]["url"])
+
+    # col4, col5, col6 = st.columns(3)
+
+    # with col4:
+    #    st.image(image_1["data"][1]["url"])
+    # with col5:
+    #    st.image(image_2["data"][1]["url"])
+    # with col6:
     #    st.image(image_3["data"][1]["url"])
+       
+    # col7, col8, col9 = st.columns(3)
+
+    # with col7:
+    #    st.image(image_1["data"][2]["url"])
+    # with col8:
+    #    st.image(image_2["data"][2]["url"])
+    # with col9:
     #    st.image(image_3["data"][2]["url"])
 
     image = image_select(
-        label="Select a picutre",
+        label="Select a picture",
         images=[image_1["data"][0]["url"], image_1["data"][1]["url"], image_1["data"][2]["url"], image_2["data"][0]["url"], image_2["data"][1]["url"], image_2["data"][2]["url"],image_3["data"][0]["url"], image_3["data"][1]["url"], image_3["data"][2]["url"]],
-    )
-
-    return image 
+        use_container_width=False
+    ) 
 
 # Step 3: Post data to Firestore
 def post_to_firestore(collection_name, data, title, caption, image, color):
@@ -150,7 +183,6 @@ def get_color():
     st.write('The current color is', color)
 
 def do_something_with_the_selection_titles():
-
     return 
 
 def do_something_with_the_selection_captions():
@@ -170,6 +202,7 @@ def main():
         if submitted:       
             # Call your set of functions here, passing the user_input
             st.text('Your input was:' + input_text)
+            st.balloons()
             get_titles(input_text)
             get_captions(input_text)
             get_images(input_text)
