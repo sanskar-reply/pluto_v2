@@ -69,6 +69,18 @@ title_list = []
 caption_list = []
 image_list = []
 
+data = {
+    "title": None,
+    "caption": None,
+    "color": None,
+    "image": None,
+}
+
+# Initialize the default app only if it's not initialized yet
+if not firebase_admin._apps:
+    cred = credentials.Certificate("firebase-key.json")
+    firebase_admin.initialize_app(cred)
+
 # @st.cache_data(experimental_allow_widgets=False)
 def get_titles(input_text):
     title_var = predict_llm_output("gen-ai-sandbox", "text-bison@001", 0.2, 256, 0.8, 40, intro_prompt + title_prompt + input_text,"us-central1", )
@@ -81,8 +93,9 @@ def get_titles(input_text):
     title = st.selectbox(
         'Select one title from this list:',
         (title_list[0], title_list[1], title_list[2], title_list[3], title_list[4]))
-
+    
     st.text('You selected:' + title)
+    data["title"] = title
 
     return title
 
@@ -100,6 +113,7 @@ def get_captions(input_text):
         (caption_list[0], caption_list[1], caption_list[2], caption_list[3], caption_list[4]))
 
     st.text('You selected:' + caption)
+    data["caption"] = caption
 
     return caption
 
@@ -152,13 +166,13 @@ def get_images(input_text):
         label="Select a picture",
         images=[image_1["data"][0]["url"], image_1["data"][1]["url"], image_1["data"][2]["url"], image_2["data"][0]["url"], image_2["data"][1]["url"], image_2["data"][2]["url"],image_3["data"][0]["url"], image_3["data"][1]["url"], image_3["data"][2]["url"]],
         use_container_width=False
-    ) 
+    )
+    data["image"] = image
+    
+    return image
 
 # Step 3: Post data to Firestore
-def post_to_firestore(collection_name, data, title, caption, image, color):
-    # Initialize the Firebase Admin SDK
-    cred = credentials.Certificate("firebase-key.json")
-    firebase_admin.initialize_app(cred)
+def post_to_firestore(collection_name, data):
     try:
         # Get a Firestore client instance
         db = firestore.client()
@@ -170,42 +184,33 @@ def post_to_firestore(collection_name, data, title, caption, image, color):
     except Exception as e:
         print(f"Error posting data: {e}")
     
-    # Example data to post
-    data = {
-            'caption': caption,
-            'cover_img': image,
-            'theme_colour': color,
-            'title': title,
-        }
-
-def get_color():
-    color = st.color_picker('Pick A Color', '#00f900')
-    st.write('The current color is', color)
-
-def do_something_with_the_selection_titles():
-    return 
-
-def do_something_with_the_selection_captions():
-    return
-
-def do_something_with_the_selection_images():
-    return
-
-def do_something_with_the_selection_colors():
-    return 
-
+    # # Example data to post
+    # data = {
+    #         'caption': caption,
+    #         'cover_img': image,
+    #         'theme_colour': color,
+    #         'title': title,
+    #     }
+    
 def main():
     with st.form("my_form"):
         input_text = st.text_input('Enter the product you would like to market:',)
 
         submitted = st.form_submit_button("Submit")
         if submitted:       
-            # Call your set of functions here, passing the user_input
-            st.text('Your input was:' + input_text)
-            st.balloons()
+            # st.balloons()
             get_titles(input_text)
             get_captions(input_text)
             get_images(input_text)
+    
+    color = st.color_picker('Pick A Color', '#00f900')
+    st.write('The current color is', color)
+    data["color"] = color
+    
+    if st.button('Publish'):
+        post_to_firestore('promotions', data)
+    else:
+        st.write('Click publish to send results to the mobile app')
 
     return input_text
 
@@ -214,4 +219,7 @@ if __name__ == "__main__":
 
 """
 make a new container as a separate col on the side, update the image in there along with the title and the caption and colour when selections are made
+Improve the prompts
+Look into giving the user the ability to get more titles/captions/images
+Add comments to the code
 """
