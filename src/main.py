@@ -14,27 +14,27 @@ st.title('Pluto')
 st.write('Recreating the gen ai app')
 
 #sidebar to have instructions on how to use the app, have a tab
-with st.sidebar:
-    tab1, tab2, tab3 = st.tabs(["Instructions", "Contact Us", "Meet the Dev"])
+# with st.sidebar:
+#     tab1, tab2, tab3 = st.tabs(["Instructions", "Contact Us", "Meet the Dev"])
 
-    with tab1:
-        st.header("How to use this app")
-        st.write("This section is under maintainence :construction:. Come back shortly")
+#     with tab1:
+#         st.header("How to use this app")
+#         st.write("This section is under maintainence :construction:. Come back shortly")
 
-        with st.echo():
-            st.write("This code will be printed to the sidebar.")
+#         with st.echo():
+#             st.write("This code will be printed to the sidebar.")
 
-        # with st.spinner("Loading..."):
-        #     time.sleep(5)
-        # st.success("Done!")
+#         # with st.spinner("Loading..."):
+#         #     time.sleep(5)
+#         # st.success("Done!")
 
-    with tab2:
-        st.header("Get in touch with the developers to report any bugs")
-        st.write("This section is under maintainence. Come back shortly")
+#     with tab2:
+#         st.header("Get in touch with the developers to report any bugs")
+#         st.write("This section is under maintainence. Come back shortly")
 
-    with tab3:
-        st.header("Meet the Dev")
-        st.write("This section is under maintainence. Come back shortly")
+#     with tab3:
+#         st.header("Meet the Dev")
+#         st.write("This section is under maintainence. Come back shortly")
 
 # Intro prompt to the language model
 intro_prompt = '''
@@ -95,7 +95,6 @@ def get_titles(input_text):
         (title_list[0], title_list[1], title_list[2], title_list[3], title_list[4]))
     
     st.text('You selected:' + title)
-    data["title"] = title
 
     return title
 
@@ -107,13 +106,11 @@ def get_captions(input_text):
         caption_list.append(line)
     # print(caption_list)
 
-    st.cache_data()
     caption = st.selectbox(
         'Select one title from this list:',
         (caption_list[0], caption_list[1], caption_list[2], caption_list[3], caption_list[4]))
-
+    
     st.text('You selected:' + caption)
-    data["caption"] = caption
 
     return caption
 
@@ -133,7 +130,7 @@ def get_images(input_text):
         image_1 = future1.result()
         image_2 = future2.result()
         image_3 = future3.result()
-    
+
     # #image bit
     # col1, col2, col3 = st.columns(3)
     
@@ -166,32 +163,39 @@ def get_images(input_text):
         label="Select a picture",
         images=[image_1["data"][0]["url"], image_1["data"][1]["url"], image_1["data"][2]["url"], image_2["data"][0]["url"], image_2["data"][1]["url"], image_2["data"][2]["url"],image_3["data"][0]["url"], image_3["data"][1]["url"], image_3["data"][2]["url"]],
         use_container_width=False
-    )
-    data["image"] = image
-    
+    )        
+
     return image
+
+def do_something_with_the_selection_titles(title):
+    data["title"] = title
+
+def do_something_with_the_selection_captions(caption):
+    data["caption"] = caption
+
+def do_something_with_the_selection_image(image):
+    data["image"] = image
+
+def do_something_with_the_selection_color(color):
+    data["color"] = color
+
 
 # Step 3: Post data to Firestore
 def post_to_firestore(collection_name, data):
-    try:
-        # Get a Firestore client instance
-        db = firestore.client()
-        # Reference to the document
-        doc_ref = db.collection(collection_name).document()
-        # Set the data to the document
-        doc_ref.set(data)
-        print(f"Data posted successfully to {collection_name}")
-    except Exception as e:
-        print(f"Error posting data: {e}")
-    
-    # # Example data to post
     # data = {
     #         'caption': caption,
     #         'cover_img': image,
     #         'theme_colour': color,
     #         'title': title,
     #     }
-    
+    try:
+        db = firestore.client()
+        doc_ref = db.collection(collection_name).document()
+        doc_ref.set(data)
+        print(f"Data posted successfully to {collection_name}")
+    except Exception as e:
+        print(f"Error posting data: {e}")
+
 def main():
     with st.form("my_form"):
         input_text = st.text_input('Enter the product you would like to market:',)
@@ -200,19 +204,22 @@ def main():
         if submitted:       
             # st.balloons()
             get_titles(input_text)
+            st.write("titles generated")
             get_captions(input_text)
+            st.write("captions generated")
             get_images(input_text)
     
     color = st.color_picker('Pick A Color', '#00f900')
     st.write('The current color is', color)
     data["color"] = color
     
-    if st.button('Publish'):
-        post_to_firestore('promotions', data)
-    else:
-        st.write('Click publish to send results to the mobile app')
+    with st.form("Publish"):
 
-    return input_text
+        st.write('Click publish to send results to the mobile app')
+        published = st.form_submit_button("Submit")
+
+        if published:
+            post_to_firestore('promotions', data)
 
 if __name__ == "__main__":
     main()
