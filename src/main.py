@@ -68,6 +68,9 @@ image_prompt = '''
 title_list = []
 caption_list = []
 image_list = []
+image_1 = ""
+image_2 = ""
+image_3 = ""
 
 data = {
     "title": None,
@@ -83,6 +86,7 @@ if not firebase_admin._apps:
 
 # @st.cache_data(experimental_allow_widgets=False)
 def get_titles(input_text):
+    global title_list
     title_var = predict_llm_output("gen-ai-sandbox", "text-bison@001", 0.2, 256, 0.8, 40, intro_prompt + title_prompt + input_text,"us-central1", )
     lines = title_var.splitlines()
     for line in lines:
@@ -90,32 +94,37 @@ def get_titles(input_text):
     # print(title_list)
 
     st.write(f'This was your input, {input_text}!')
-    title = st.selectbox(
-        'Select one title from this list:',
-        (title_list[0], title_list[1], title_list[2], title_list[3], title_list[4]))
+    # title = st.selectbox(
+    #     'Select one title from this list:',
+    #     (title_list[0], title_list[1], title_list[2], title_list[3], title_list[4]))
     
-    st.text('You selected:' + title)
+    # st.text('You selected:' + title)
 
-    return title
+    return title_list
 
 # @st.cache_data(experimental_allow_widgets=True)
 def get_captions(input_text):
+    global caption_list
     caption_var = predict_llm_output("gen-ai-sandbox", "text-bison@001", 0.3, 1024, 0.8, 40, intro_prompt + caption_prompt + input_text, "us-central1")
     lines = caption_var.splitlines()
     for line in lines:
         caption_list.append(line)
     # print(caption_list)
 
-    caption = st.selectbox(
-        'Select one title from this list:',
-        (caption_list[0], caption_list[1], caption_list[2], caption_list[3], caption_list[4]))
+    # caption = st.selectbox(
+    #     'Select one title from this list:',
+    #     (caption_list[0], caption_list[1], caption_list[2], caption_list[3], caption_list[4]))
     
-    st.text('You selected:' + caption)
+    # st.text('You selected:' + caption)
 
-    return caption
+    return caption_list
 
 # @st.cache_data(experimental_allow_widgets=True)
 def get_images(input_text):
+    global image_list
+    global image_1
+    global image_2
+    global image_3
     image_var = predict_llm_output("gen-ai-sandbox", "text-bison@001", 0.3, 1024, 0.8, 40, intro_prompt + image_prompt + input_text, "us-central1")
     lines = image_var.splitlines()
     for line in lines:
@@ -159,11 +168,41 @@ def get_images(input_text):
     # with col9:
     #    st.image(image_3["data"][2]["url"])
 
+    # image = image_select(
+    #     label="Select a picture",
+    #     images=[image_1["data"][0]["url"], image_1["data"][1]["url"], image_1["data"][2]["url"], image_2["data"][0]["url"], image_2["data"][1]["url"], image_2["data"][2]["url"],image_3["data"][0]["url"], image_3["data"][1]["url"], image_3["data"][2]["url"]],
+    #     use_container_width=False
+    # )        
+
+    return image_1, image_2, image_3
+
+def select_titles(title_list):
+    global title
+    title = st.selectbox(
+        'Select one title from this list:',
+        (title_list[0], title_list[1], title_list[2], title_list[3], title_list[4]))
+    
+    st.text('You selected:' + title)
+
+    return title
+
+def select_captions(caption_list):
+    global caption
+    caption = st.selectbox(
+        'Select one title from this list:',
+        (caption_list[0], caption_list[1], caption_list[2], caption_list[3], caption_list[4]))
+    
+    st.text('You selected:' + caption)
+
+    return caption
+
+def select_images(image_1, image_2, image_3):
+    global image
     image = image_select(
         label="Select a picture",
         images=[image_1["data"][0]["url"], image_1["data"][1]["url"], image_1["data"][2]["url"], image_2["data"][0]["url"], image_2["data"][1]["url"], image_2["data"][2]["url"],image_3["data"][0]["url"], image_3["data"][1]["url"], image_3["data"][2]["url"]],
         use_container_width=False
-    )        
+    )  
 
     return image
 
@@ -179,15 +218,8 @@ def do_something_with_the_selection_image(image):
 def do_something_with_the_selection_color(color):
     data["color"] = color
 
-
 # Step 3: Post data to Firestore
 def post_to_firestore(collection_name, data):
-    # data = {
-    #         'caption': caption,
-    #         'cover_img': image,
-    #         'theme_colour': color,
-    #         'title': title,
-    #     }
     try:
         db = firestore.client()
         doc_ref = db.collection(collection_name).document()
@@ -196,33 +228,34 @@ def post_to_firestore(collection_name, data):
     except Exception as e:
         print(f"Error posting data: {e}")
 
-def main():
-    with st.form("my_form"):
-        input_text = st.text_input('Enter the product you would like to market:',)
 
-        submitted = st.form_submit_button("Submit")
-        if submitted:       
-            # st.balloons()
-            get_titles(input_text)
-            st.write("titles generated")
-            get_captions(input_text)
-            st.write("captions generated")
-            get_images(input_text)
-    
-    color = st.color_picker('Pick A Color', '#00f900')
-    st.write('The current color is', color)
-    data["color"] = color
-    
-    with st.form("Publish"):
+with st.form("my_form"):
+    input_text = st.text_input('Enter the product you would like to market:',)
+    submitted = st.form_submit_button("Submit")
+    if submitted:       
+        # st.balloons()
+        get_titles(input_text)
+        st.write("titles generated")
+        get_captions(input_text)
+        st.write("captions generated")
+        get_images(input_text)
 
-        st.write('Click publish to send results to the mobile app')
-        published = st.form_submit_button("Submit")
+color = st.color_picker('Pick A Color', '#00f900')
+st.write('The current color is', color)
+data["color"] = color
 
-        if published:
-            post_to_firestore('promotions', data)
-
-if __name__ == "__main__":
-    main()
+with st.form("Publish"):
+    select_titles(title_list)
+    select_captions(caption_list)
+    select_images(image_1, image_2, image_3)
+    st.write('Click publish to send results to the mobile app')
+    published = st.form_submit_button("Submit")
+    if published:
+        do_something_with_the_selection_captions(caption)
+        do_something_with_the_selection_color(color)
+        do_something_with_the_selection_image(image)
+        do_something_with_the_selection_titles(title)
+        post_to_firestore('promotions', data)
 
 """
 make a new container as a separate col on the side, update the image in there along with the title and the caption and colour when selections are made
