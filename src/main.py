@@ -14,27 +14,27 @@ st.title('Pluto')
 st.write('Recreating the gen ai app')
 
 #sidebar to have instructions on how to use the app, have a tab
-# with st.sidebar:
-#     tab1, tab2, tab3 = st.tabs(["Instructions", "Contact Us", "Meet the Dev"])
+with st.sidebar:
+    tab1, tab2, tab3 = st.tabs(["Instructions", "Contact Us", "Meet the Dev"])
 
-#     with tab1:
-#         st.header("How to use this app")
-#         st.write("This section is under maintainence :construction:. Come back shortly")
+    with tab1:
+        st.header("How to use this app")
+        st.write("This section is under maintainence :construction:. Come back shortly")
 
-#         with st.echo():
-#             st.write("This code will be printed to the sidebar.")
+        with st.echo():
+            st.write("This code will be printed to the sidebar.")
 
-#         # with st.spinner("Loading..."):
-#         #     time.sleep(5)
-#         # st.success("Done!")
+        # with st.spinner("Loading..."):
+        #     time.sleep(5)
+        # st.success("Done!")
 
-#     with tab2:
-#         st.header("Get in touch with the developers to report any bugs")
-#         st.write("This section is under maintainence. Come back shortly")
+    with tab2:
+        st.header("Get in touch with the developers to report any bugs")
+        st.write("This section is under maintainence. Come back shortly")
 
-#     with tab3:
-#         st.header("Meet the Dev")
-#         st.write("This section is under maintainence. Come back shortly")
+    with tab3:
+        st.header("Meet the Dev")
+        st.write("This section is under maintainence. Come back shortly")
 
 # Intro prompt to the language model
 intro_prompt = '''
@@ -64,7 +64,9 @@ image_prompt = '''
                     Do not include the category names in the output. Always use the number at the start of a sentence
                     User input:
                 '''
-
+title = "jyg"
+caption = ""
+image = ""
 title_list = []
 caption_list = []
 image_list = []
@@ -83,6 +85,7 @@ if not firebase_admin._apps:
 
 # @st.cache_data(experimental_allow_widgets=False)
 def get_titles(input_text):
+    global title
     title_var = predict_llm_output("gen-ai-sandbox", "text-bison@001", 0.2, 256, 0.8, 40, intro_prompt + title_prompt + input_text,"us-central1", )
     lines = title_var.splitlines()
     for line in lines:
@@ -100,6 +103,7 @@ def get_titles(input_text):
 
 # @st.cache_data(experimental_allow_widgets=True)
 def get_captions(input_text):
+    global caption
     caption_var = predict_llm_output("gen-ai-sandbox", "text-bison@001", 0.3, 1024, 0.8, 40, intro_prompt + caption_prompt + input_text, "us-central1")
     lines = caption_var.splitlines()
     for line in lines:
@@ -116,6 +120,7 @@ def get_captions(input_text):
 
 # @st.cache_data(experimental_allow_widgets=True)
 def get_images(input_text):
+    global image
     image_var = predict_llm_output("gen-ai-sandbox", "text-bison@001", 0.3, 1024, 0.8, 40, intro_prompt + image_prompt + input_text, "us-central1")
     lines = image_var.splitlines()
     for line in lines:
@@ -197,12 +202,17 @@ def post_to_firestore(collection_name, data):
         print(f"Error posting data: {e}")
 
 def main():
+    global title
     with st.form("my_form"):
         input_text = st.text_input('Enter the product you would like to market:',)
 
         submitted = st.form_submit_button("Submit")
         if submitted:       
-            # st.balloons()
+            st.balloons()
+            with st.spinner('Wait for it...'):
+                time.sleep(5)
+            st.success('Done!')
+            
             get_titles(input_text)
             st.write("titles generated")
             get_captions(input_text)
@@ -219,6 +229,7 @@ def main():
         published = st.form_submit_button("Submit")
 
         if published:
+            data['title'] = title
             post_to_firestore('promotions', data)
 
 if __name__ == "__main__":
